@@ -15,10 +15,8 @@ const itemSchema = new mongoose.Schema(
       max: 255,
     },
     quantity: {
-      type: String,
+      type: Number,
       required: true,
-      min: 1,
-      max: 1024,
     },
   },
   { timestamps: true }

@@ -20,6 +20,12 @@ const userSchema = new mongoose.Schema(
       max: 1024,
       min: 5,
     },
+    isAdmin: {
+      type: Boolean,
+    },
+    isVerified: {
+      type: Boolean,
+    },
   },
   { timestamps: true }
 );
