@@ -47,4 +47,17 @@ router.post("/", verify, async (req, res) => {
   }
 });
 
+// edit blog
+router.put("/:blogId", async (req, res) => {
+  try {
+    const updatedBlog = await Blog.updateOne(
+      { _id: req.params.blogId },
+      { $set: { title: req.body.title, body: req.body.body } }
+    );
+    res.json(updatedBlog);
+  } catch (error) {
+    res.json({ message: error });
+  }
+});
+
 module.exports = router;

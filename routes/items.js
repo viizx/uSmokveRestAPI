@@ -48,4 +48,23 @@ router.post("/", verify, async (req, res) => {
   }
 });
 
+// edit item
+router.put("/:itemId", async (req, res) => {
+  try {
+    const updatedItem = await Item.updateOne(
+      { _id: req.params.itemId },
+      {
+        $set: {
+          name: req.body.name,
+          body: req.body.body,
+          quantity: req.body.quantity,
+        },
+      }
+    );
+    res.json(updatedItem);
+  } catch (error) {
+    res.json({ message: error });
+  }
+});
+
 module.exports = router;
