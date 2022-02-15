@@ -1,28 +1,29 @@
-const router = require("express").Router(); 
+const router = require("express").Router();
 const User = require("../model/User.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { registerValidation, loginValidation } = require("../validation");
 const verify = require("../verifyToken");
+const Token = require("../model/Token");
+const sendEmail = require("../utils/sendEmail");
+const crypto = require("crypto");
 // dobavi korisnike
 router.get("/", verify, async (req, res) => {
-
-    try{
+  try {
     const users = await User.find();
     res.json(users);
-    } catch(error){
-        res.json({message: error})
-    }
+  } catch (error) {
+    res.json({ message: error });
+  }
 });
 // dobavi korisnika
 router.get("/:userId", async (req, res) => {
-
-    try {
-    const user = await User.findOne({_id: req.params.userId})
+  try {
+    const user = await User.findOne({ _id: req.params.userId });
     res.json(user);
-    } catch(error){
-        res.json({message: error})
-    }
+  } catch (error) {
+    res.json({ message: error });
+  }
 });
 // registriraj korisnika
 router.post("/register", async (req, res) => {
@@ -44,14 +45,44 @@ router.post("/register", async (req, res) => {
     email: req.body.email,
     password: hashedPassword,
     isVerified: false,
-    isAdmin: false
+    isAdmin: false,
   });
 
   try {
     let savedUser = await user.save();
+
+    const token = await new Token({
+      userId: user._id,
+      token: crypto.randomBytes(32).toString("hex"),
+    }).save();
+    const url = `${process.env.BASE_URL}/api/user/${user._id}/verify/${token.token}`;
+    await sendEmail(user.email, "Verify Email", url);
     res.send({ user: savedUser._id });
   } catch (error) {
     res.send(error);
+  }
+});
+
+// verifikacija korisnika
+router.get("/:userId/verify/:token", async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.params.userId });
+    if (!user) return res.status(400).send({ message: "Invalid Link" });
+
+    const token = await Token.findOne({
+      userId: user._id,
+      token: req.params.token,
+    });
+    if (!token) return res.status(400).send({ message: "invalid Link" });
+
+    const updatedUser = await User.updateOne(
+      { _id: user._id },
+      { $set: { isVerified: true } }
+    );
+    await token.remove();
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    res.status(400).send({ message: error });
   }
 });
 // login korisnika
@@ -65,6 +96,21 @@ router.post("/login", async (req, res) => {
   //password is correct
   const validPass = await bcrypt.compare(req.body.password, user.password);
   if (!validPass) return res.status(400).send("wrong password");
+
+  if (!user.isVerified) {
+    let token = await Token.findOne({ userId: user._id });
+    if (!token) {
+      const token = await new Token({
+        userId: user._id,
+        token: crypto.randomBytes(32).toString("hex"),
+      }).save();
+      const url = `${process.env.BASE_URL}user/${user._id}/verify/${token.token}`;
+      await sendVerificationEmail(user.email, "Verify Email", url);
+    }
+    return status(400).send({
+      message: "An email was sent to you, please verify",
+    });
+  }
 
   //create and assign token
   const token = await jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
