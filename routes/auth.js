@@ -85,6 +85,52 @@ router.get("/:userId/verify/:token", async (req, res) => {
     res.status(400).send({ message: error });
   }
 });
+
+// zaboravljen password
+
+router.post("/reset", async (req, res) => {
+  try {
+    const user = await User.findOne({ email: req.body.email });
+    if (!user) return res.status(400).send({ message: "User doesn't exist" });
+
+    const token = await new Token({
+      userId: user._id,
+      token: crypto.randomBytes(32).toString("hex"),
+    }).save();
+    const url = `${process.env.BASE_URL}/api/user/${user._id}/reset/${token.token}`;
+    await sendEmail(user.email, "Reset password", url);
+    res.status(200).json({ message: `Email sent to ${user.email}` });
+  } catch (error) {
+    res.status(400).send({ message: error });
+  }
+});
+
+// reset password
+
+router.post("/:userId/reset/:token", async (req, res) => {
+  try {
+    //hash the password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(req.body.password, salt);
+    const user = await User.findOne({ _id: req.params.userId });
+    if (!user) return res.status(400).send({ message: "Invalid Link" });
+
+    const token = await Token.findOne({
+      userId: user._id,
+      token: req.params.token,
+    });
+    if (!token) return res.status(400).send({ message: "invalid Link" });
+
+    const updatedUser = await User.updateOne(
+      { _id: user._id },
+      { $set: { password: hashedPassword } }
+    );
+    await token.remove();
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    res.status(400).send({ message: error });
+  }
+});
 // login korisnika
 router.post("/login", async (req, res) => {
   //validate the data before logging in

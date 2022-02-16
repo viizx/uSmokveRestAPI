@@ -1,6 +1,5 @@
 const sgMail = require("@sendgrid/mail");
 const dotenv = require("dotenv");
-const { text } = require("express");
 dotenv.config();
 
 const sendEmail = async (email, subject, url) => {
