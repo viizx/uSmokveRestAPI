@@ -25,7 +25,7 @@ router.get("/:blogId", async (req, res) => {
 // izbrisi odredeni blog
 router.delete("/:blogId", verify, async (req, res) => {
   try {
-    const removeBlog = await Blog.deleteOne({ _id: req.params.blogId });
+    const removedBlog = await Blog.deleteOne({ _id: req.params.blogId });
     res.json(removedBlog);
   } catch (error) {
     res.json({ message: error });
@@ -37,6 +37,7 @@ router.post("/", verify, async (req, res) => {
   const blog = new Blog({
     title: req.body.title,
     body: req.body.body,
+    author: req.body.author,
   });
 
   try {
@@ -52,7 +53,13 @@ router.put("/:blogId", async (req, res) => {
   try {
     const updatedBlog = await Blog.updateOne(
       { _id: req.params.blogId },
-      { $set: { title: req.body.title, body: req.body.body } }
+      {
+        $set: {
+          title: req.body.title,
+          body: req.body.body,
+          author: req.body.author,
+        },
+      }
     );
     res.json(updatedBlog);
   } catch (error) {

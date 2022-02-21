@@ -12,7 +12,13 @@ const blogSchema = new mongoose.Schema(
       type: String,
       required: true,
       min: 5,
-      max: 255,
+      max: 9999,
+    },
+    author: {
+      type: String,
+      required: true,
+      min: 3,
+      max: 20,
     },
   },
   { timestamps: true }
