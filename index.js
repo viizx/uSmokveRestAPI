@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const authRoute = require("./routes/auth");
 const blogsRoute = require("./routes/blogs");
 const itemsRoute = require("./routes/items");
+const cors = require("cors");
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ mongoose.connect(process.env.DB_CONNECT, { useNewUrlParser: true }, () =>
 );
 
 //Middleware
+app.use(cors());
 app.use(express.json());
 
 //Routes Middleware
